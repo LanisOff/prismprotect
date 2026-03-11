@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "${mod_name}",
+  "description": "PrismProtect — server-side block, entity and container logging with rollback support.",
+  "authors": [
+    "${mod_authors}"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.lanis.prismprotect.fabric.PrismProtectFabric"
+    ]
+  },
+  "mixins": [
+    "mixins.prismprotect.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "minecraft": ">=${minecraft_ver}",
+    "architectury": ">=9.0.0",
+    "fabric-api": "*"
+  }
+}

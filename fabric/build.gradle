@@ -1,0 +1,73 @@
+plugins {
+    id "com.github.johnrengelman.shadow"
+}
+
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+base {
+    archivesName = "${rootProject.archives_base_name}-fabric"
+}
+
+configurations {
+    common
+    shadowCommon
+    shade
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentFabric.extendsFrom common
+}
+
+dependencies {
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
+    modApi "dev.architectury:architectury-fabric:${rootProject.architectury_api_version}"
+
+    common(project(path: ":common", configuration: "namedElements")) { transitive = false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive = false }
+
+    shade("org.xerial:sqlite-jdbc:${rootProject.sqlite_version}") { transitive = false }
+}
+
+processResources {
+    def replaceProperties = [
+            version              : rootProject.mod_version,
+            minecraft_ver        : rootProject.minecraft_version,
+            fabric_loader_version: rootProject.fabric_loader_version,
+            mod_id               : rootProject.mod_id,
+            mod_name             : rootProject.mod_name,
+            mod_authors          : rootProject.mod_authors
+    ]
+    inputs.properties replaceProperties
+    filesMatching("fabric.mod.json") {
+        expand replaceProperties
+    }
+}
+
+shadowJar {
+    configurations = [project.configurations.shadowCommon, project.configurations.shade]
+    archiveClassifier = "dev-shadow"
+    exclude "architectury.common.json"
+    exclude "META-INF/maven/**"
+    exclude "META-INF/*.txt"
+    exclude "META-INF/LICENSE"
+    exclude "META-INF/NOTICE"
+}
+
+remapJar {
+    input.set(shadowJar.archiveFile)
+    dependsOn(shadowJar)
+    archiveClassifier = ""
+}
+
+jar {
+    archiveClassifier = "dev"
+}
+
+sourcesJar {
+    def commonSources = project(":common").tasks.named("sourcesJar", Jar)
+    dependsOn(commonSources)
+    from(commonSources.get().archiveFile.map { zipTree(it) })
+}

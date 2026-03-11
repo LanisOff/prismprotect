@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "dev.lanis.prismprotect.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "mixins.prismprotect.refmap.json",
+  "mixins": [
+    "ExplosionMixin",
+    "FireBlockMixin",
+    "LevelSetBlockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

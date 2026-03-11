@@ -1,0 +1,18 @@
+architectury {
+    common(rootProject.enabled_platforms.split(","))
+}
+
+loom {
+    mixin {
+        defaultRefmapName = "mixins.prismprotect.refmap.json"
+    }
+}
+
+base {
+    archivesName = "${rootProject.archives_base_name}-common"
+}
+
+dependencies {
+    modImplementation "dev.architectury:architectury:${rootProject.architectury_api_version}"
+    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
+}

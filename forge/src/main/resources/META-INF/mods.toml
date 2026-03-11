@@ -1,0 +1,43 @@
+modLoader="javafml"
+mixinConfigs="mixins.prismprotect.json"
+loaderVersion="[47,)"
+license="${mod_license}"
+
+[[dependencies.${mod_id}]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="architectury"
+    mandatory=true
+    versionRange="[9.0.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"
+
+[[mods]]
+    modId="${mod_id}"
+    version="${mod_version}"
+    displayName="${mod_name}"
+    description='''
+PrismProtect — server-side block & entity logging mod with full rollback support.
+A Forge-native CoreProtect equivalent for modded 1.20.1 servers.
+
+Supports blocks from any mod, entity rollback with NBT, container logging,
+inspect mode, time-based lookup/rollback/restore, and async SQLite storage.
+
+Commands: /pp help
+    '''
+    logoFile="prismprotect.png"
+
+[[mods.modproperties]]
+    brand="${mod_name}"
