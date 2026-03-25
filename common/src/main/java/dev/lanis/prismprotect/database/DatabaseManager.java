@@ -1,6 +1,7 @@
 package dev.lanis.prismprotect.database;
 
 import dev.lanis.prismprotect.PrismProtect;
+import dev.lanis.prismprotect.handler.ItemProvenanceTracker;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,7 +12,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DatabaseManager {
 
@@ -92,13 +95,46 @@ public class DatabaseManager {
                         rolled_back INTEGER NOT NULL DEFAULT 0
                     )""");
 
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS item_log (
+                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        time        INTEGER NOT NULL,
+                        player      TEXT    NOT NULL,
+                        world       TEXT    NOT NULL,
+                        x           INTEGER NOT NULL,
+                        y           INTEGER NOT NULL,
+                        z           INTEGER NOT NULL,
+                        item_type   TEXT    NOT NULL,
+                        amount      INTEGER NOT NULL,
+                        item_data   TEXT,
+                        action      INTEGER NOT NULL DEFAULT 0,
+                        source      INTEGER NOT NULL,
+                        group_id    INTEGER NOT NULL DEFAULT 0,
+                        provenance_data TEXT,
+                        rolled_back INTEGER NOT NULL DEFAULT 0
+                    )""");
+
             statement.execute("CREATE INDEX IF NOT EXISTS idx_bl_xyz  ON block_log     (world,x,y,z)");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_bl_time ON block_log     (time)");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_el_time ON entity_log    (world,time)");
             statement.execute("CREATE INDEX IF NOT EXISTS idx_cl_xyz  ON container_log (world,x,y,z)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_il_xyz  ON item_log      (world,x,y,z)");
+            statement.execute("CREATE INDEX IF NOT EXISTS idx_il_time ON item_log      (time)");
 
             try {
                 statement.execute("ALTER TABLE container_log ADD COLUMN rolled_back INTEGER NOT NULL DEFAULT 0");
+            } catch (SQLException ignored) {
+            }
+            try {
+                statement.execute("ALTER TABLE item_log ADD COLUMN action INTEGER NOT NULL DEFAULT 0");
+            } catch (SQLException ignored) {
+            }
+            try {
+                statement.execute("ALTER TABLE item_log ADD COLUMN group_id INTEGER NOT NULL DEFAULT 0");
+            } catch (SQLException ignored) {
+            }
+            try {
+                statement.execute("ALTER TABLE item_log ADD COLUMN provenance_data TEXT");
             } catch (SQLException ignored) {
             }
         }
@@ -360,6 +396,25 @@ public class DatabaseManager {
         );
     }
 
+    public void logItem(ItemLogEntry entry) {
+        exec(
+                "INSERT INTO item_log (time,player,world,x,y,z,item_type,amount,item_data,action,source,group_id,provenance_data,rolled_back) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,0)",
+                entry.time,
+                entry.player,
+                entry.world,
+                entry.x,
+                entry.y,
+                entry.z,
+                entry.itemType,
+                entry.amount,
+                entry.itemData,
+                entry.action,
+                entry.source,
+                entry.groupId,
+                entry.provenanceData
+        );
+    }
+
     public List<ContainerLogEntry> lookupContainer(String world, int x, int y, int z) {
         return queryContainers(
                 "SELECT * FROM container_log WHERE world=? AND x=? AND y=? AND z=? ORDER BY time DESC LIMIT 50",
@@ -504,10 +559,117 @@ public class DatabaseManager {
         return 0;
     }
 
+    public List<ItemLogEntry> getItemsForRollback(LookupParams params) {
+        return buildItemQuery(params, false);
+    }
+
+    public List<ItemLogEntry> getItemsForRestore(LookupParams params) {
+        return buildItemQuery(params, true);
+    }
+
+    private List<ItemLogEntry> buildItemQuery(LookupParams params, boolean rolledBackOnly) {
+        List<ItemLogEntry> base = queryItemsPS(buildItemBaseQuery(rolledBackOnly), params);
+        if (!params.hasBox()) {
+            return trimItems(base, params.limit, rolledBackOnly);
+        }
+
+        Set<Long> matchingCraftGroups = new LinkedHashSet<>();
+        for (ItemLogEntry entry : base) {
+            if (entry.source != ItemLogEntry.SOURCE_CRAFT
+                    || entry.action != ItemLogEntry.ACTION_REMOVE
+                    || entry.groupId == 0L) {
+                continue;
+            }
+
+            if (ItemProvenanceTracker.matchesArea(
+                    entry.provenanceData,
+                    params.world,
+                    params.minX,
+                    params.maxX,
+                    params.minY,
+                    params.maxY,
+                    params.minZ,
+                    params.maxZ
+            )) {
+                matchingCraftGroups.add(entry.groupId);
+            }
+        }
+
+        List<ItemLogEntry> filtered = new ArrayList<>();
+        for (ItemLogEntry entry : base) {
+            if (entry.source == ItemLogEntry.SOURCE_CRAFT) {
+                if (entry.groupId != 0L && matchingCraftGroups.contains(entry.groupId)) {
+                    filtered.add(entry);
+                }
+                continue;
+            }
+
+            if (matchesEventArea(entry, params)) {
+                filtered.add(entry);
+            }
+        }
+
+        return trimItems(filtered, params.limit, rolledBackOnly);
+    }
+
+    private String buildItemBaseQuery(boolean rolledBackOnly) {
+        StringBuilder sql = new StringBuilder("SELECT * FROM item_log WHERE 1=1");
+        sql.append(rolledBackOnly ? " AND rolled_back=1" : " AND rolled_back=0");
+
+        sql.append(" AND (? IS NULL OR player=?)");
+        sql.append(" AND (? <= 0 OR time>=?)");
+        sql.append(" ORDER BY time ").append(rolledBackOnly ? "ASC" : "DESC");
+        return sql.toString();
+    }
+
+    private synchronized List<ItemLogEntry> queryItemsPS(String sql, LookupParams params) {
+        List<ItemLogEntry> results = new ArrayList<>();
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, params.player);
+            ps.setString(2, params.player);
+            ps.setLong(3, params.since);
+            ps.setLong(4, params.since);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    results.add(readItemEntry(rs));
+                }
+            }
+        } catch (SQLException ex) {
+            PrismProtect.LOGGER.error("queryItemsPS failed", ex);
+        }
+
+        return results;
+    }
+
+    private ItemLogEntry readItemEntry(ResultSet rs) throws SQLException {
+        ItemLogEntry entry = new ItemLogEntry();
+        entry.id = rs.getInt("id");
+        entry.time = rs.getLong("time");
+        entry.player = rs.getString("player");
+        entry.world = rs.getString("world");
+        entry.x = rs.getInt("x");
+        entry.y = rs.getInt("y");
+        entry.z = rs.getInt("z");
+        entry.itemType = rs.getString("item_type");
+        entry.amount = rs.getInt("amount");
+        entry.itemData = rs.getString("item_data");
+        entry.action = rs.getInt("action");
+        entry.source = rs.getInt("source");
+        entry.groupId = rs.getLong("group_id");
+        entry.provenanceData = rs.getString("provenance_data");
+        entry.rolledBack = rs.getInt("rolled_back") == 1;
+        return entry;
+    }
+
+    public void setItemRolledBack(int id, boolean rolledBack) {
+        exec("UPDATE item_log SET rolled_back=? WHERE id=?", rolledBack ? 1 : 0, id);
+    }
+
     public synchronized int purgeOlderThan(long cutoffMs) {
         int deleted = 0;
 
-        for (String table : new String[]{"block_log", "entity_log", "container_log"}) {
+        for (String table : new String[]{"block_log", "entity_log", "container_log", "item_log"}) {
             try (PreparedStatement ps = conn.prepareStatement("DELETE FROM " + table + " WHERE time<?")) {
                 ps.setLong(1, cutoffMs);
                 deleted += ps.executeUpdate();
@@ -539,6 +701,35 @@ public class DatabaseManager {
         } catch (SQLException ignored) {
         }
         return 0;
+    }
+
+    public synchronized long itemLogCount() {
+        try (Statement statement = conn.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM item_log")) {
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+        } catch (SQLException ignored) {
+        }
+        return 0;
+    }
+
+    private boolean matchesEventArea(ItemLogEntry entry, LookupParams params) {
+        if (params.world != null && !params.world.equals(entry.world)) {
+            return false;
+        }
+
+        return entry.x >= params.minX && entry.x <= params.maxX
+                && entry.y >= params.minY && entry.y <= params.maxY
+                && entry.z >= params.minZ && entry.z <= params.maxZ;
+    }
+
+    private List<ItemLogEntry> trimItems(List<ItemLogEntry> items, int limit, boolean rolledBackOnly) {
+        if (items.size() <= limit) {
+            return items;
+        }
+
+        return new ArrayList<>(items.subList(0, limit));
     }
 
     private int fillParams(PreparedStatement ps, LookupParams params, int startIndex) throws SQLException {

@@ -328,13 +328,14 @@ public final class PPCommand {
             return 1;
         }
 
-        source.sendSuccess(() -> MessageUtil.info("Rolling back blocks and containers..."), false);
+        source.sendSuccess(() -> MessageUtil.info("Rolling back blocks, containers and items..."), false);
         int blockCount = RollbackManager.rollback(source.getServer(), params);
         int containerCount = RollbackManager.rollbackContainers(source.getServer(), params);
+        int itemCount = RollbackManager.rollbackItems(source.getServer(), params);
 
         source.sendSuccess(
                 () -> MessageUtil.success(
-                        "Rolled back §f" + blockCount + "§a block and §f" + containerCount + "§a container changes."
+                        "Rolled back §f" + blockCount + "§a block, §f" + containerCount + "§a container and §f" + itemCount + "§a item changes."
                 ),
                 false
         );
@@ -351,14 +352,15 @@ public final class PPCommand {
         LookupParams params = parse(raw, source);
         params.limit = ROLLBACK_QUERY_LIMIT;
 
-        source.sendSuccess(() -> MessageUtil.info("Restoring blocks and containers..."), false);
+        source.sendSuccess(() -> MessageUtil.info("Restoring blocks, containers and items..."), false);
 
         int blockCount = RollbackManager.restore(source.getServer(), params);
         int containerCount = RollbackManager.restoreContainers(source.getServer(), params);
+        int itemCount = RollbackManager.restoreItems(source.getServer(), params);
 
         source.sendSuccess(
                 () -> MessageUtil.success(
-                        "Restored §f" + blockCount + "§a block and §f" + containerCount + "§a container changes."
+                        "Restored §f" + blockCount + "§a block, §f" + containerCount + "§a container and §f" + itemCount + "§a item changes."
                 ),
                 false
         );

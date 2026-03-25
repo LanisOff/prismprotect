@@ -62,6 +62,7 @@ public final class ContainerTracker {
 
             int diff = previous - current;
             if (diff > 0) {
+                ItemStack transfer = buildStack(beforeCount.itemType, beforeCount.itemData, diff);
                 PrismProtect.getDatabase().logContainer(new ContainerLogEntry(
                         eventTime,
                         playerName,
@@ -74,6 +75,7 @@ public final class ContainerTracker {
                         beforeCount.itemData,
                         ContainerLogEntry.ACTION_REMOVE
                 ));
+                ItemProvenanceTracker.addFromSource(playerId, snapshot.world, snapshot.pos, transfer);
             }
         }
 
@@ -84,6 +86,7 @@ public final class ContainerTracker {
 
             int diff = current - previous;
             if (diff > 0) {
+                ItemStack transfer = buildStack(afterCount.itemType, afterCount.itemData, diff);
                 PrismProtect.getDatabase().logContainer(new ContainerLogEntry(
                         eventTime,
                         playerName,
@@ -96,6 +99,7 @@ public final class ContainerTracker {
                         afterCount.itemData,
                         ContainerLogEntry.ACTION_ADD
                 ));
+                ItemProvenanceTracker.consume(playerId, transfer, diff);
             }
         }
     }
@@ -146,5 +150,16 @@ public final class ContainerTracker {
         CompoundTag copy = stack.getTag().copy();
         copy.remove("Count");
         return copy.isEmpty() ? null : copy.toString();
+    }
+
+    private static ItemStack buildStack(String itemType, String itemData, int count) {
+        ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.tryParse(itemType)), count);
+        if (itemData != null && !itemData.isBlank()) {
+            try {
+                stack.setTag(net.minecraft.nbt.TagParser.parseTag(itemData));
+            } catch (Exception ignored) {
+            }
+        }
+        return stack;
     }
 }

@@ -4,9 +4,11 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "mixins.prismprotect.refmap.json",
   "mixins": [
+    "BlockItemDropMixin",
     "ExplosionMixin",
     "FireBlockMixin",
-    "LevelSetBlockMixin"
+    "LevelSetBlockMixin",
+    "ResultSlotMixin"
   ],
   "injectors": {
     "defaultRequire": 1
