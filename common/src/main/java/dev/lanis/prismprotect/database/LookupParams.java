@@ -10,6 +10,7 @@ public class LookupParams {
     public int minZ = Integer.MIN_VALUE, maxZ = Integer.MAX_VALUE;
     public int actionFilter = -1;
     public int limit = 50;
+    public int offset = 0;
 
     public static LookupParams ofRadius(String world, int cx, int cy, int cz, int r) {
         LookupParams p = new LookupParams();
@@ -22,5 +23,9 @@ public class LookupParams {
 
     public boolean hasBox() {
         return minX != Integer.MIN_VALUE;
+    }
+
+    public int page() {
+        return (offset / Math.max(1, limit)) + 1;
     }
 }

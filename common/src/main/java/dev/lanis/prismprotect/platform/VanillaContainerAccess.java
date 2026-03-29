@@ -32,7 +32,7 @@ public class VanillaContainerAccess implements ContainerAccess {
         }
 
         be.setChanged();
-        return true;
+        return remaining.isEmpty();
     }
 
     @Override
@@ -57,6 +57,6 @@ public class VanillaContainerAccess implements ContainerAccess {
         }
 
         be.setChanged();
-        return true;
+        return toRemove == 0;
     }
 }
