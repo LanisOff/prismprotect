@@ -25,13 +25,14 @@ public class ForgeContainerAccess extends VanillaContainerAccess {
             for (int slot = 0; slot < handler.getSlots() && !remaining.isEmpty(); slot++) {
                 remaining = handler.insertItem(slot, remaining, false);
             }
-            if (!remaining.isEmpty()) {
+            boolean success = remaining.isEmpty();
+            if (!success) {
                 PrismProtect.LOGGER.warn(
                         "Could not fully add {} x{} to container at {} ({} remaining)",
                         stack.getItem(), stack.getCount(), pos, remaining.getCount());
             }
             be.setChanged();
-            return true;
+            return success;
         }
 
         return super.addItem(level, pos, stack);
@@ -56,8 +57,14 @@ public class ForgeContainerAccess extends VanillaContainerAccess {
                     toRemove -= take;
                 }
             }
+            if (toRemove > 0) {
+                PrismProtect.LOGGER.warn(
+                        "Could not fully remove {} x{} from container at {} ({} missing)",
+                        stack.getItem(), stack.getCount(), pos, toRemove
+                );
+            }
             be.setChanged();
-            return true;
+            return toRemove == 0;
         }
 
         return super.removeItem(level, pos, stack);

@@ -6,27 +6,41 @@ import net.minecraft.network.chat.MutableComponent;
 
 public final class MessageUtil {
 
-    private static final String PRE = "§8[§b✦ PP§8] §r";
+    private MessageUtil() {
+    }
 
-    private MessageUtil() {}
+    public static Component success(String text) {
+        return prefixed(text, ChatFormatting.GREEN);
+    }
 
-    public static Component raw(String text)     { return Component.literal(PRE + text); }
-    public static Component success(String text) { return col(text, ChatFormatting.GREEN); }
-    public static Component error(String text)   { return col(text, ChatFormatting.RED); }
-    public static Component warn(String text)    { return col(text, ChatFormatting.YELLOW); }
-    public static Component info(String text)    { return col(text, ChatFormatting.AQUA); }
+    public static Component error(String text) {
+        return prefixed(text, ChatFormatting.RED);
+    }
+
+    public static Component warn(String text) {
+        return prefixed(text, ChatFormatting.YELLOW);
+    }
+
+    public static Component info(String text) {
+        return prefixed(text, ChatFormatting.AQUA);
+    }
 
     public static Component header(String title) {
-        return Component.literal("§8§m───────§r §b✦ §f" + title + " §b✦§r §8§m───────");
+        MutableComponent line = Component.literal("------------------------------").withStyle(ChatFormatting.DARK_GRAY);
+        MutableComponent mid = Component.literal(" " + title + " ").withStyle(ChatFormatting.WHITE, ChatFormatting.BOLD);
+        return Component.empty()
+                .append(line)
+                .append(mid)
+                .append(line.copy());
     }
 
     public static Component divider() {
-        return Component.literal("§8§m───────────────────────────§r");
+        return Component.literal("------------------------------------------------------------")
+                .withStyle(ChatFormatting.DARK_GRAY);
     }
 
-    private static Component col(String t, ChatFormatting f) {
-        MutableComponent c = Component.literal(PRE);
-        c.append(Component.literal(t).withStyle(f));
-        return c;
+    private static Component prefixed(String text, ChatFormatting color) {
+        MutableComponent prefix = Component.literal("[PP] ").withStyle(ChatFormatting.DARK_GRAY);
+        return prefix.append(Component.literal(text).withStyle(color));
     }
 }

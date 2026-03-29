@@ -1,0 +1,17 @@
+.DS_Store
+
+# Gradle
+.gradle/
+**/.gradle/
+**/build/
+
+# IDE
+.idea/
+.project
+.settings/
+
+# Local tooling
+.stfolder/
+
+# Dist artifacts
+dist/
