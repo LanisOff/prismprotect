@@ -1,10 +1,7 @@
 # PrismProtect - protect your minecraft modded server
 
 ![Stars](https://img.shields.io/github/stars/LanisOff/prismprotect)
-![Forks](https://img.shields.io/github/forks/LanisOff/prismprotect)
 ![Issues](https://img.shields.io/github/issues/LanisOff/prismprotect)
-![Pull Requests](https://img.shields.io/github/issues-pr/LanisOff/prismprotect)
-![Contributors](https://img.shields.io/github/contributors/LanisOff/prismprotect)
 ![Last Commit](https://img.shields.io/github/last-commit/LanisOff/prismprotect)
 
 
