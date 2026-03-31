@@ -8,6 +8,9 @@
 ![PRs](https://img.shields.io/github/issues-pr/LanisOff/prismprotect)
 ![Last Commit](https://img.shields.io/github/last-commit/LanisOff/prismprotect)
 
+[Beta 1.20-1.20.4 Branch(Forge&Fabric)](https://github.com/LanisOff/prismprotect/tree/beta-1.20-1.20.4-for-forge/fabric)
+[NOT WORKING! 1.20.x Branch(Neoforge&Fabric)](https://github.com/LanisOff/prismprotect/tree/mc/1.20.x-for-neoforge/fabric)
+[NOT WORKING! 1.21.x Branch(Neoforge&Fabric)](https://github.com/LanisOff/prismprotect/tree/mc/1.21.x-for-neoforge/fabric)
 ## What It Does
 
 PrismProtect logs world changes and gives moderators fast tools to inspect, rollback, and restore damage.
