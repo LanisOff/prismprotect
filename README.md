@@ -1,3 +1,5 @@
+# NOT WORKING
+
 # PrismProtect
 
 Server-side rollback and investigation tools for modded Minecraft servers (Architectury, Fabric + Forge).
