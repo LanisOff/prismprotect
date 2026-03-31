@@ -1,6 +1,6 @@
-# PrismProtect
-
-Server-side rollback and investigation tools for modded Minecraft servers (Architectury, Fabric + Forge).
+<p>
+  <img src="https://i.ibb.co/N6wH1qhM/image-gh.png" alt="Project Logo" width="726">
+</p>
 
 ![Stars](https://img.shields.io/github/stars/LanisOff/prismprotect)
 ![Forks](https://img.shields.io/github/forks/LanisOff/prismprotect)
