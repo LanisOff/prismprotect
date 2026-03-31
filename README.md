@@ -33,7 +33,7 @@ PrismProtect logs world changes and gives moderators fast tools to inspect, roll
 ## Current Beta
 
 - Branch: `beta/change-highlighter`
-- Version: `1.3.1-highlight`
+- Version: `1.3.2`
 - Added: visual change highlighting + client config screens
 
 ## Commands
@@ -49,9 +49,10 @@ Toggle inspect mode and click blocks to view history.
 Search logs with filters and pagination.
 
 ```bash
-/pp highlight [u:<name>] [t:<time>] [r:<radius>] [w:<world>] [d:<sec>] [l:<limit>] [p:<page>]
+/pp highlight [off] [u:<name>] [t:<time>] [r:<radius>] [w:<world>] [d:<sec>] [l:<limit>] [p:<page>]
 ```
-Render highlighted changes around matched blocks.
+Render colored outline highlights around matched blocks.
+By default, highlight stays active until `/pp highlight off`. Running `/pp highlight ...` again replaces the previous selection.
 
 ```bash
 /pp rollback [u:<name>] [t:<time>] [r:<radius>] [w:<world>] [a:entity] [preview]

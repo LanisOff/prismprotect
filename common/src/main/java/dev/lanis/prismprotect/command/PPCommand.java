@@ -186,6 +186,9 @@ public final class PPCommand {
         if ("preview".startsWith(token)) {
             tokenBuilder.suggest("preview");
         }
+        if ("off".startsWith(token)) {
+            tokenBuilder.suggest("off");
+        }
 
         return tokenBuilder.buildFuture();
     }
@@ -228,7 +231,7 @@ public final class PPCommand {
         source.sendSuccess(() -> MessageUtil.header("PrismProtect Help"), false);
         source.sendSuccess(() -> Component.literal("/pp inspect - toggle inspect mode"), false);
         source.sendSuccess(() -> Component.literal("/pp lookup [u:<p>] [t:<time>] [r:<radius>] [w:<world>] [a:block|entity|container] [l:<limit>] [p:<page>]"), false);
-        source.sendSuccess(() -> Component.literal("/pp highlight [u:<p>] [t:<time>] [r:<radius>] [w:<world>] [d:<sec>] [l:<limit>] [p:<page>]"), false);
+        source.sendSuccess(() -> Component.literal("/pp highlight [off] [u:<p>] [t:<time>] [r:<radius>] [w:<world>] [d:<sec>] [l:<limit>] [p:<page>]"), false);
         source.sendSuccess(() -> Component.literal("/pp rollback u:<player> t:<time> [r:<radius>] [w:<world>] [a:entity] [preview]"), false);
         source.sendSuccess(() -> Component.literal("/pp restore u:<player> t:<time> [r:<radius>] [w:<world>] [preview]"), false);
         source.sendSuccess(() -> Component.literal("/pp purge t:<time>"), false);
@@ -274,6 +277,7 @@ public final class PPCommand {
                 "Highlight config: enabled=" + PrismProtectConfig.isHighlightEnabled()
                         + ", default=" + PrismProtectConfig.defaultHighlightDurationSeconds() + "s"
                         + ", max=" + PrismProtectConfig.maxHighlightDurationSeconds() + "s"
+                        + ", cap=" + PrismProtectConfig.maxHighlightedBlocks()
         ), false);
         source.sendSuccess(() -> Component.literal("Storage: SQLite (WAL), " + formatBytes(dbSizeBytes)), false);
         source.sendSuccess(() -> Component.literal("DB path: " + (dbPath == null ? "unknown" : dbPath)), false);
@@ -419,6 +423,18 @@ public final class PPCommand {
 
     private static int highlight(CommandContext<CommandSourceStack> context, String raw) {
         CommandSourceStack source = context.getSource();
+        ServerPlayer player = getPlayer(context);
+        if (player == null) {
+            source.sendFailure(MessageUtil.error("Only players can run /pp highlight."));
+            return 0;
+        }
+
+        if (hasWord(raw, "off")) {
+            ChangeHighlighter.clear(player.getUUID(), player.serverLevel().dimension().location().toString(), player);
+            source.sendSuccess(() -> MessageUtil.warn("Highlight OFF."), false);
+            return 1;
+        }
+
         if (!PrismProtectConfig.isHighlightEnabled()) {
             source.sendFailure(MessageUtil.error("Highlighter is disabled in PrismProtect config."));
             return 0;
@@ -432,13 +448,11 @@ public final class PPCommand {
             return 1;
         }
 
-        int defaultDuration = PrismProtectConfig.defaultHighlightDurationSeconds();
-        int maxDuration = PrismProtectConfig.maxHighlightDurationSeconds();
-        int seconds = Math.max(3, Math.min(maxDuration, parsePositiveInt(param(raw, "d"), defaultDuration)));
-        ServerPlayer player = getPlayer(context);
-        if (player == null) {
-            source.sendFailure(MessageUtil.error("Only players can run /pp highlight."));
-            return 0;
+        int seconds = 0;
+        String dToken = param(raw, "d");
+        if (dToken != null) {
+            int maxDuration = PrismProtectConfig.maxHighlightDurationSeconds();
+            seconds = Math.max(3, Math.min(maxDuration, parsePositiveInt(dToken, PrismProtectConfig.defaultHighlightDurationSeconds())));
         }
 
         if (!player.serverLevel().dimension().location().toString().equals(params.world)) {
@@ -447,7 +461,12 @@ public final class PPCommand {
         }
 
         ChangeHighlighter.highlight(player, player.serverLevel(), entries, seconds);
-        source.sendSuccess(() -> MessageUtil.success("Highlighting " + entries.size() + " records for " + seconds + "s."), false);
+        final int highlightSeconds = seconds;
+        if (seconds <= 0) {
+            source.sendSuccess(() -> MessageUtil.success("Highlight ON for " + entries.size() + " records. Use /pp highlight off to clear."), false);
+        } else {
+            source.sendSuccess(() -> MessageUtil.success("Highlighting " + entries.size() + " records for " + highlightSeconds + "s."), false);
+        }
         return 1;
     }
 
@@ -591,6 +610,18 @@ public final class PPCommand {
         }
         for (String token : raw.split("\\s+")) {
             if (flag.equalsIgnoreCase(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasWord(String raw, String word) {
+        if (raw == null || raw.isBlank()) {
+            return false;
+        }
+        for (String token : raw.split("\\s+")) {
+            if (word.equalsIgnoreCase(token)) {
                 return true;
             }
         }

@@ -16,6 +16,7 @@ public final class PrismProtectFabricConfigScreen extends Screen {
     private EditBox maxDurationBox;
     private EditBox pulseTicksBox;
     private EditBox particlesPerBlockBox;
+    private EditBox maxBlocksBox;
 
     private boolean highlightEnabled;
 
@@ -61,6 +62,11 @@ public final class PrismProtectFabricConfigScreen extends Screen {
         particlesPerBlockBox = new EditBox(font, centerX + 20, y, 100, 20, Component.literal(""));
         particlesPerBlockBox.setValue(Integer.toString(data.highlightParticlesPerBlock));
         addRenderableWidget(particlesPerBlockBox);
+        y += 24;
+
+        maxBlocksBox = new EditBox(font, centerX + 20, y, 100, 20, Component.literal(""));
+        maxBlocksBox.setValue(Integer.toString(data.maxHighlightedBlocks));
+        addRenderableWidget(maxBlocksBox);
 
         addRenderableWidget(
                 Button.builder(Component.literal("Save"), button -> saveAndClose())
@@ -88,6 +94,8 @@ public final class PrismProtectFabricConfigScreen extends Screen {
         guiGraphics.drawString(font, "Pulse interval (ticks)", centerX - 120, y + 6, 0xD0D0D0, false);
         y += 24;
         guiGraphics.drawString(font, "Particles per block", centerX - 120, y + 6, 0xD0D0D0, false);
+        y += 24;
+        guiGraphics.drawString(font, "Max highlighted blocks", centerX - 120, y + 6, 0xD0D0D0, false);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
@@ -106,6 +114,7 @@ public final class PrismProtectFabricConfigScreen extends Screen {
         data.maxHighlightDurationSeconds = parseInt(maxDurationBox, data.maxHighlightDurationSeconds);
         data.highlightPulseIntervalTicks = parseInt(pulseTicksBox, data.highlightPulseIntervalTicks);
         data.highlightParticlesPerBlock = parseInt(particlesPerBlockBox, data.highlightParticlesPerBlock);
+        data.maxHighlightedBlocks = parseInt(maxBlocksBox, data.maxHighlightedBlocks);
         PrismProtectConfig.update(data);
         onClose();
     }

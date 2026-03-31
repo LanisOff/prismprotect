@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class PrismProtect {
 
     public static final String MOD_ID = "prismprotect";
-    public static final String VERSION = "1.3.1-highlight";
+    public static final String VERSION = "1.3.2";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);

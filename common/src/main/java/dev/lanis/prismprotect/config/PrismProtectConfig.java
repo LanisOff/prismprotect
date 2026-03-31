@@ -61,6 +61,7 @@ public final class PrismProtectConfig {
         copy.maxHighlightDurationSeconds = values.maxHighlightDurationSeconds;
         copy.highlightPulseIntervalTicks = values.highlightPulseIntervalTicks;
         copy.highlightParticlesPerBlock = values.highlightParticlesPerBlock;
+        copy.maxHighlightedBlocks = values.maxHighlightedBlocks;
         return copy;
     }
 
@@ -90,6 +91,10 @@ public final class PrismProtectConfig {
         return values.highlightParticlesPerBlock;
     }
 
+    public static synchronized int maxHighlightedBlocks() {
+        return values.maxHighlightedBlocks;
+    }
+
     private static void sanitize(Data data) {
         data.defaultHighlightDurationSeconds = clamp(data.defaultHighlightDurationSeconds, 3, 180);
         data.maxHighlightDurationSeconds = clamp(data.maxHighlightDurationSeconds, 3, 600);
@@ -98,6 +103,7 @@ public final class PrismProtectConfig {
         }
         data.highlightPulseIntervalTicks = clamp(data.highlightPulseIntervalTicks, 2, 20);
         data.highlightParticlesPerBlock = clamp(data.highlightParticlesPerBlock, 1, 20);
+        data.maxHighlightedBlocks = clamp(data.maxHighlightedBlocks, 10, 512);
     }
 
     private static int clamp(int value, int min, int max) {
@@ -112,7 +118,8 @@ public final class PrismProtectConfig {
         public boolean highlightEnabled = true;
         public int defaultHighlightDurationSeconds = 20;
         public int maxHighlightDurationSeconds = 180;
-        public int highlightPulseIntervalTicks = 6;
-        public int highlightParticlesPerBlock = 6;
+        public int highlightPulseIntervalTicks = 10;
+        public int highlightParticlesPerBlock = 2;
+        public int maxHighlightedBlocks = 64;
     }
 }
