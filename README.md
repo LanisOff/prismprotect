@@ -1,119 +1,124 @@
-# PrismProtect - protect your minecraft modded server
+# PrismProtect
+
+Server-side rollback and investigation tools for modded Minecraft servers (Architectury, Fabric + Forge).
 
 ![Stars](https://img.shields.io/github/stars/LanisOff/prismprotect)
+![Forks](https://img.shields.io/github/forks/LanisOff/prismprotect)
 ![Issues](https://img.shields.io/github/issues/LanisOff/prismprotect)
+![PRs](https://img.shields.io/github/issues-pr/LanisOff/prismprotect)
 ![Last Commit](https://img.shields.io/github/last-commit/LanisOff/prismprotect)
 
+## What It Does
 
+PrismProtect logs world changes and gives moderators fast tools to inspect, rollback, and restore damage.
 
-## Needs Architectury
+- Block logging (place/break/replace) with BlockEntity/NBT support
+- Explosion and fire tracking through vanilla pipelines
+- Container and inventory change logging
+- Entity death logging with NBT snapshot for restore
+- Item rollback support (inventory + nearby drops)
+- SQLite storage (bundled) with WAL mode
+- In-game inspect mode (`/pp inspect`)
+- Beta highlighter mode (`/pp highlight`) for visual investigation
 
+## Supported Versions
 
-**PrismProtect is a server-side Architectury mod for Minecraft 1.20.1 that provides CoreProtect-like logging and rollback — without plugins, built for modded servers and high performance.**
+| Minecraft | Loader | Status |
+|---|---|---|
+| 1.20.1 | Forge 47.2.0+ | Supported |
+| 1.20.1 | Fabric Loader 0.14.25+ + Fabric API 0.92.2+1.20.1 | Supported |
 
----
+> This is primarily a server-side moderation mod.
 
-## Features
+## Current Beta
 
-Logs block break/place/replace with full BlockEntity NBT support
-
-Tracks explosions (TNT, creepers, vanilla explosion pipeline)  
-**Some mods with custom explosion logic can bypass vanilla hooks and not be logged**
-
-Logs entity deaths with complete NBT snapshot for accurate restoration
-
-Records container and inventory changes with menu open/close diff tracking
-
-Logs item drops from broken blocks and crafting outputs for item rollback
-
-Supports blocks and entities from **any mod** — namespaced IDs are stored as-is
-
-Optimized SQLite storage with WAL journaling and thread-safe writes
-
-Inspect mode — click or break blocks to view full change history
-
----
+- Branch: `beta/change-highlighter`
+- Version: `1.3.2`
+- Added: visual change highlighting + client config screens
 
 ## Commands
 
-```
+```bash
 /pp inspect
 ```
+Toggle inspect mode and click blocks to view history.
 
-Toggles inspect mode to view block history by clicking blocks
-
+```bash
+/pp lookup [u:<name>] [t:<time>] [r:<radius>] [w:<world>] [a:block|entity|container] [l:<limit>] [p:<page>]
 ```
-/pp lookup [u:<name>] [t:<time>] [r:<radius>] [a:block|entity|container]
-```
+Search logs with filters and pagination.
 
-Searches logged actions using filters (`a:block` is used by default)
-
+```bash
+/pp highlight [off] [u:<name>] [t:<time>] [r:<radius>] [w:<world>] [d:<sec>] [l:<limit>] [p:<page>]
 ```
-/pp rollback [u:<name>] [t:<time>] [r:<radius>] [a:entity]
-```
+Render colored outline highlights around matched blocks.
+By default, highlight stays active until `/pp highlight off`. Running `/pp highlight ...` again replaces the previous selection.
 
-Reverts changes within the selected time/radius.  
-Without `a:entity`, rolls back block, container and item changes
-
+```bash
+/pp rollback [u:<name>] [t:<time>] [r:<radius>] [w:<world>] [a:entity] [preview]
 ```
-/pp restore [u:<name>] [t:<time>] [r:<radius>]
-```
+Rollback changes. Use `preview`/`dry-run` to estimate impact first.
 
-Re-applies previously rolled-back block, container and item changes
-
+```bash
+/pp restore [u:<name>] [t:<time>] [r:<radius>] [w:<world>] [preview]
 ```
+Restore previously rolled-back changes.
+
+```bash
 /pp purge t:<time>
 ```
+Delete old records (requires op level 4).
 
-Deletes log data older than the specified time (requires op level 4)
-
-```
+```bash
 /pp status
 ```
+Show counters, DB info, uptime, and highlighter state.
 
-Shows database counters and mod runtime status
+### Time Format
 
----
+Use `s`, `m`, `h`, `d`, `w`.
 
-## Time Format
+Examples: `30m`, `1h30m`, `2d`, `1w`
 
-Supports `s` `m` `h` `d` `w` — for example: `1h30m`, `2d`, `1w`, `30m`
+## Highlighter (Beta)
 
----
+Action colors:
 
-## Entity Rollback
+- Green: block place
+- Red: block break
+- Orange: explosion
+- Yellow: fire
 
-Entity rollback is available as a **separate argument** — add `a:entity` to rollback.  
-PrismProtect re-spawns entities at original coordinates using the full NBT snapshot captured at death.
+Client settings UI:
 
----
+- Forge: Mods -> PrismProtect -> Config
+- Fabric: ModMenu -> PrismProtect -> Configure
 
-## Item Rollback
+Config file path:
 
-PrismProtect logs:
-
-- item drops spawned from broken blocks
-- crafting outputs taken from the crafting result slot
-
-During `/pp rollback`, PrismProtect restores the affected blocks and also tries to remove logged items from the original player's inventory.  
-If some of those items are no longer in the inventory, it also checks nearby ground drops around the original block position.
-
----
+- `config/prismprotect/prismprotect-client.json`
 
 ## Storage
 
-PrismProtect uses **SQLite** (bundled — no external database required).  
-The database is stored at `config/prismprotect/prismprotect.db`.  
-WAL journaling ensures safe concurrent access during active play.
+Database file:
 
----
+- `config/prismprotect/prismprotect.db`
 
-## Version Support
+PrismProtect uses SQLite with WAL mode by default.
 
-| Minecraft | Loader | Status |
-|-----------|--------|--------|
-| 1.20.1    | Forge 47.2.0+ | ✅ Supported |
-| 1.20.1    | Fabric Loader 0.14.25+ + Fabric API 0.92.2+1.20.1 | ✅ Supported |
-| 1.20.x    | Other builds | ⚠️ Not tested |
+## Development
 
-> Server-side only. Clients do **not** need PrismProtect installed to join.
+```bash
+git clone https://github.com/LanisOff/prismprotect.git
+cd prismprotect
+```
+
+Main branches used in this repo:
+
+- `main`
+- `beta`
+
+## License
+
+This repository includes the GNU GPL v3 license text.
+See `LICENSE`.

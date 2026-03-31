@@ -19,8 +19,10 @@ import java.util.Set;
 public class DatabaseManager {
 
     private static final String DB_FILE = "prismprotect.db";
+    private static final int LATEST_SCHEMA_VERSION = 2;
 
     private final Path dir;
+    private Path dbPath;
     private Connection conn;
 
     public DatabaseManager(Path dir) {
@@ -32,7 +34,7 @@ public class DatabaseManager {
             Files.createDirectories(dir);
             Class.forName("org.sqlite.JDBC");
 
-            Path dbPath = dir.resolve(DB_FILE).toAbsolutePath();
+            dbPath = dir.resolve(DB_FILE).toAbsolutePath();
             conn = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
 
             try (Statement statement = conn.createStatement()) {
@@ -41,10 +43,46 @@ public class DatabaseManager {
             }
 
             createTables();
+            migrateSchema();
             PrismProtect.LOGGER.info("SQLite DB at {}/{}", dir, DB_FILE);
         } catch (Exception ex) {
             PrismProtect.LOGGER.error("DB init failed", ex);
         }
+    }
+
+    private synchronized void migrateSchema() {
+        try (Statement statement = conn.createStatement()) {
+            int currentVersion = readSchemaVersion(statement);
+            if (currentVersion < 1) {
+                setSchemaVersion(statement, 1);
+                currentVersion = 1;
+            }
+
+            if (currentVersion < 2) {
+                statement.execute("CREATE INDEX IF NOT EXISTS idx_bl_world_time ON block_log(world,time)");
+                statement.execute("CREATE INDEX IF NOT EXISTS idx_bl_world_player_time ON block_log(world,player,time)");
+                statement.execute("CREATE INDEX IF NOT EXISTS idx_cl_world_time ON container_log(world,time)");
+                statement.execute("CREATE INDEX IF NOT EXISTS idx_cl_world_player_time ON container_log(world,player,time)");
+                statement.execute("CREATE INDEX IF NOT EXISTS idx_il_world_time ON item_log(world,time)");
+                statement.execute("CREATE INDEX IF NOT EXISTS idx_il_world_player_time ON item_log(world,player,time)");
+                setSchemaVersion(statement, 2);
+            }
+        } catch (SQLException ex) {
+            PrismProtect.LOGGER.error("DB schema migration failed", ex);
+        }
+    }
+
+    private int readSchemaVersion(Statement statement) throws SQLException {
+        try (ResultSet rs = statement.executeQuery("PRAGMA user_version")) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    private void setSchemaVersion(Statement statement, int version) throws SQLException {
+        statement.execute("PRAGMA user_version=" + Math.min(version, LATEST_SCHEMA_VERSION));
     }
 
     private synchronized void createTables() throws SQLException {
@@ -182,6 +220,7 @@ public class DatabaseManager {
         appendBlockFilters(sql, params);
         sql.append(" ORDER BY time ").append(onlyRolledBack ? "ASC" : "DESC");
         sql.append(" LIMIT ").append(params.limit);
+        sql.append(" OFFSET ").append(params.offset);
 
         return sql.toString();
     }
@@ -276,6 +315,7 @@ public class DatabaseManager {
         }
 
         sql.append(" ORDER BY time DESC LIMIT ").append(params.limit);
+        sql.append(" OFFSET ").append(params.offset);
 
         List<EntityLogEntry> results = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
@@ -333,6 +373,7 @@ public class DatabaseManager {
         }
 
         sql.append(" ORDER BY time DESC LIMIT ").append(params.limit);
+        sql.append(" OFFSET ").append(params.offset);
 
         List<EntityLogEntry> results = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
@@ -440,6 +481,7 @@ public class DatabaseManager {
             sql.append(" AND x>=? AND x<=? AND y>=? AND y<=? AND z>=? AND z<=?");
         }
         sql.append(" ORDER BY time DESC LIMIT ").append(params.limit);
+        sql.append(" OFFSET ").append(params.offset);
 
         return queryContainersPS(sql.toString(), params);
     }
@@ -471,6 +513,7 @@ public class DatabaseManager {
 
         sql.append(rolledBackOnly ? " ORDER BY time ASC" : " ORDER BY time DESC");
         sql.append(" LIMIT ").append(params.limit);
+        sql.append(" OFFSET ").append(params.offset);
 
         return queryContainersPS(sql.toString(), params);
     }
@@ -570,7 +613,7 @@ public class DatabaseManager {
     private List<ItemLogEntry> buildItemQuery(LookupParams params, boolean rolledBackOnly) {
         List<ItemLogEntry> base = queryItemsPS(buildItemBaseQuery(rolledBackOnly), params);
         if (!params.hasBox()) {
-            return trimItems(base, params.limit, rolledBackOnly);
+            return trimItems(base, params);
         }
 
         Set<Long> matchingCraftGroups = new LinkedHashSet<>();
@@ -609,13 +652,14 @@ public class DatabaseManager {
             }
         }
 
-        return trimItems(filtered, params.limit, rolledBackOnly);
+        return trimItems(filtered, params);
     }
 
     private String buildItemBaseQuery(boolean rolledBackOnly) {
         StringBuilder sql = new StringBuilder("SELECT * FROM item_log WHERE 1=1");
         sql.append(rolledBackOnly ? " AND rolled_back=1" : " AND rolled_back=0");
 
+        sql.append(" AND (? IS NULL OR world=?)");
         sql.append(" AND (? IS NULL OR player=?)");
         sql.append(" AND (? <= 0 OR time>=?)");
         sql.append(" ORDER BY time ").append(rolledBackOnly ? "ASC" : "DESC");
@@ -626,10 +670,12 @@ public class DatabaseManager {
         List<ItemLogEntry> results = new ArrayList<>();
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, params.player);
-            ps.setString(2, params.player);
-            ps.setLong(3, params.since);
-            ps.setLong(4, params.since);
+            ps.setString(1, params.world);
+            ps.setString(2, params.world);
+            ps.setString(3, params.player);
+            ps.setString(4, params.player);
+            ps.setLong(5, params.since);
+            ps.setLong(6, params.since);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     results.add(readItemEntry(rs));
@@ -714,6 +760,21 @@ public class DatabaseManager {
         return 0;
     }
 
+    public Path getDatabasePath() {
+        return dbPath;
+    }
+
+    public long databaseFileSizeBytes() {
+        if (dbPath == null) {
+            return 0L;
+        }
+        try {
+            return Files.exists(dbPath) ? Files.size(dbPath) : 0L;
+        } catch (Exception ignored) {
+            return 0L;
+        }
+    }
+
     private boolean matchesEventArea(ItemLogEntry entry, LookupParams params) {
         if (params.world != null && !params.world.equals(entry.world)) {
             return false;
@@ -724,12 +785,13 @@ public class DatabaseManager {
                 && entry.z >= params.minZ && entry.z <= params.maxZ;
     }
 
-    private List<ItemLogEntry> trimItems(List<ItemLogEntry> items, int limit, boolean rolledBackOnly) {
-        if (items.size() <= limit) {
-            return items;
+    private List<ItemLogEntry> trimItems(List<ItemLogEntry> items, LookupParams params) {
+        int fromIndex = Math.max(0, Math.min(items.size(), params.offset));
+        int toIndex = Math.min(items.size(), fromIndex + Math.max(1, params.limit));
+        if (fromIndex >= toIndex) {
+            return new ArrayList<>();
         }
-
-        return new ArrayList<>(items.subList(0, limit));
+        return new ArrayList<>(items.subList(fromIndex, toIndex));
     }
 
     private int fillParams(PreparedStatement ps, LookupParams params, int startIndex) throws SQLException {

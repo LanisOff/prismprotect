@@ -28,6 +28,10 @@ public final class ItemProvenanceTracker {
         return NEXT_GROUP_ID.getAndIncrement();
     }
 
+    public static void clear(UUID playerId) {
+        PLAYER_PROVENANCE.remove(playerId);
+    }
+
     public static void addFromSource(UUID playerId, String world, BlockPos pos, ItemStack stack) {
         if (stack.isEmpty()) {
             return;

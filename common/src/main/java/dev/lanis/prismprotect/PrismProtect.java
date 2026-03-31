@@ -4,6 +4,7 @@ import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.platform.Platform;
 import dev.lanis.prismprotect.command.PPCommand;
+import dev.lanis.prismprotect.config.PrismProtectConfig;
 import dev.lanis.prismprotect.database.DatabaseManager;
 import dev.lanis.prismprotect.handler.CommonEventHandler;
 import dev.lanis.prismprotect.platform.ContainerAccess;
@@ -17,12 +18,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class PrismProtect {
 
     public static final String MOD_ID = "prismprotect";
+    public static final String VERSION = "1.3.2";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
     private static DatabaseManager databaseManager;
     private static ContainerAccess containerAccess = new VanillaContainerAccess();
+    private static volatile long startedAtMs = 0L;
 
     private PrismProtect() {}
 
@@ -34,6 +37,8 @@ public final class PrismProtect {
         }
 
         initDatabase();
+        PrismProtectConfig.load();
+        startedAtMs = System.currentTimeMillis();
         CommonEventHandler.register();
         CommandRegistrationEvent.EVENT.register((dispatcher, registry, selection) ->
                 PPCommand.register(dispatcher));
@@ -46,6 +51,10 @@ public final class PrismProtect {
 
     public static ContainerAccess getContainerAccess() {
         return containerAccess;
+    }
+
+    public static long uptimeMs() {
+        return startedAtMs == 0L ? 0L : Math.max(0L, System.currentTimeMillis() - startedAtMs);
     }
 
     private static void initDatabase() {

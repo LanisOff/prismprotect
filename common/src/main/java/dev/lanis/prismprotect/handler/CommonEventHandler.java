@@ -194,6 +194,9 @@ public final class CommonEventHandler {
 
     private static void onPlayerLogout(ServerPlayer player) {
         ContainerTracker.clear(player.getUUID());
+        InspectManager.remove(player.getUUID());
+        ItemProvenanceTracker.clear(player.getUUID());
+        ChangeHighlighter.clear(player.getUUID());
     }
 
     private static void showInspect(ServerPlayer player, Level level, BlockPos pos, String blockType) {

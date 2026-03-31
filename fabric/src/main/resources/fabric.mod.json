@@ -12,6 +12,12 @@
   "entrypoints": {
     "main": [
       "dev.lanis.prismprotect.fabric.PrismProtectFabric"
+    ],
+    "client": [
+      "dev.lanis.prismprotect.fabric.PrismProtectFabricClient"
+    ],
+    "modmenu": [
+      "dev.lanis.prismprotect.fabric.client.PrismProtectModMenuIntegration"
     ]
   },
   "mixins": [
