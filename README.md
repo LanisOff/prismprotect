@@ -115,7 +115,7 @@ cd prismprotect
 Main branches used in this repo:
 
 - `main`
-- `beta/change-highlighter`
+- `beta`
 
 ## License
 
