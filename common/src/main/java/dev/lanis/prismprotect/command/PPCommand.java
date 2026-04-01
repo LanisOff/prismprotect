@@ -282,7 +282,7 @@ public final class PPCommand {
         source.sendSuccess(() -> Component.literal("Storage: SQLite (WAL), " + formatBytes(dbSizeBytes)), false);
         source.sendSuccess(() -> Component.literal("DB path: " + (dbPath == null ? "unknown" : dbPath)), false);
         source.sendSuccess(() -> Component.literal("Uptime: " + formatDuration(PrismProtect.uptimeMs())), false);
-        source.sendSuccess(() -> Component.literal("Version: " + PrismProtect.VERSION + " (Architectury Fabric/Forge 1.20.1)"), false);
+        source.sendSuccess(() -> Component.literal("Version: " + PrismProtect.VERSION + " (Architectury Fabric/Forge 1.20.1-1.20.4)"), false);
         return 1;
     }
 

@@ -20,7 +20,7 @@ license="${mod_license}"
 [[dependencies.${mod_id}]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.20.1,1.21)"
+    versionRange="[1.20.1,1.20.5)"
     ordering="NONE"
     side="BOTH"
 
@@ -30,7 +30,7 @@ license="${mod_license}"
     displayName="${mod_name}"
     description='''
 PrismProtect — server-side block & entity logging mod with full rollback support.
-A Forge-native CoreProtect equivalent for modded 1.20.1 servers.
+A Forge-native CoreProtect equivalent for modded 1.20.1-1.20.4 servers.
 
 Supports blocks from any mod, entity rollback with NBT, container logging,
 inspect mode, time-based lookup/rollback/restore, and async SQLite storage.

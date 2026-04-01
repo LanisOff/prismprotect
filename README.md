@@ -28,8 +28,8 @@ PrismProtect logs world changes and gives moderators fast tools to inspect, roll
 
 | Minecraft | Loader | Status |
 |---|---|---|
-| 1.20.1 | Forge 47.2.0+ | Supported |
-| 1.20.1 | Fabric Loader 0.14.25+ + Fabric API 0.92.2+1.20.1 | Supported |
+| 1.20.1-1.20.4 | Forge 47.2.0+ | Supported |
+| 1.20.1-1.20.4 | Fabric Loader 0.14.25+ + Fabric API 0.92.2+1.20.1 | Supported |
 
 > This is primarily a server-side moderation mod.
 

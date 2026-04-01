@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,14 +43,30 @@ public final class ChangeHighlighter {
 
         int maxBlocks = PrismProtectConfig.maxHighlightedBlocks();
         if (byPosition.size() > maxBlocks) {
-            List<Map.Entry<BlockPos, BlockLogEntry>> nearest = new java.util.ArrayList<>(byPosition.entrySet());
-            nearest.sort(java.util.Comparator.comparingDouble(
-                    row -> row.getKey().distToCenterSqr(player.getX(), player.getY(), player.getZ())
+            double px = player.getX();
+            double py = player.getY();
+            double pz = player.getZ();
+
+            PriorityQueue<Map.Entry<BlockPos, BlockLogEntry>> nearest = new PriorityQueue<>(
+                    java.util.Comparator.comparingDouble(
+                            row -> -row.getKey().distToCenterSqr(px, py, pz)
+                    )
+            );
+
+            for (Map.Entry<BlockPos, BlockLogEntry> row : byPosition.entrySet()) {
+                nearest.offer(row);
+                if (nearest.size() > maxBlocks) {
+                    nearest.poll();
+                }
+            }
+
+            List<Map.Entry<BlockPos, BlockLogEntry>> limited = new java.util.ArrayList<>(nearest);
+            limited.sort(java.util.Comparator.comparingDouble(
+                    row -> row.getKey().distToCenterSqr(px, py, pz)
             ));
 
             byPosition.clear();
-            for (int i = 0; i < maxBlocks; i++) {
-                Map.Entry<BlockPos, BlockLogEntry> row = nearest.get(i);
+            for (Map.Entry<BlockPos, BlockLogEntry> row : limited) {
                 byPosition.put(row.getKey(), row.getValue());
             }
         }
