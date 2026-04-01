@@ -131,7 +131,7 @@ PrismProtect uses SQLite with WAL mode by default.
   - validation + safe fallback defaults
 
 ### v1.5 — Moderation UX
-- Add dedicated `/pp preview` for rollback impact simulation
+- Add dedicated `/pp preview` for rollback impact simulation(maybe)
 - Add rollback confirmation flow for dangerous operations
 - Saved lookup presets for frequent moderation cases
 - Better paginated/clickable lookup output for faster triage
