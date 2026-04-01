@@ -108,18 +108,51 @@ Database file:
 - `config/prismprotect/prismprotect.db`
 
 PrismProtect uses SQLite with WAL mode by default.
+Понял. Вот роадмап без `1.9`.
 
-## Development
+## PrismProtect Roadmap
 
-```bash
-git clone https://github.com/LanisOff/prismprotect.git
-cd prismprotect
-```
+### v1.4 — Multi-Version Port + Config Expansion
+- Port PrismProtect to:
+  - **1.20.x NeoForge + Fabric**
+  - **1.21.x NeoForge + Fabric**
+- Keep behavior parity with current 1.20.1–1.20.4 branch:
+  - same commands
+  - same rollback logic
+  - same database structure
+- Expand Forge/Fabric config capabilities:
+  - full highlight color customization (place/break/explosion/fire)
+  - alpha/opacity and line thickness controls
+  - unified option set across loaders
+- Improve config UX:
+  - shared common config schema
+  - loader-specific UI wrappers only
+  - migration from old config keys
+  - validation + safe fallback defaults
 
-Main branches used in this repo:
+### v1.5 — Moderation UX
+- Add dedicated `/pp preview` for rollback impact simulation
+- Add rollback confirmation flow for dangerous operations
+- Saved lookup presets for frequent moderation cases
+- Better paginated/clickable lookup output for faster triage
 
-- `main`
-- `beta`
+### v1.6 — Safer Rollback
+- Protected block/entity categories (never rollback critical data)
+- Conflict-aware rollback (handle post-event changes safely)
+- Region/claim-aware rollback filters (where integrations are available)
+- Batch rollback journaling for safer recovery
+
+### v1.7 — Performance & Storage
+- Adaptive async batching for high event throughput
+- Automatic SQLite index tuning and schema migration helpers
+- Log retention + archive strategy for long-running servers
+- Runtime diagnostics (`/pp perf`) and write queue visibility
+
+### v1.8 — Integrations
+- Discord/webhook alerts for suspicious events
+- JSON/CSV export for moderation evidence
+- RCON/automation-friendly read operations
+- Permissions/context integrations with admin ecosystems
 
 ## License
 
